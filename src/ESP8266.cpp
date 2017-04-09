@@ -128,7 +128,7 @@ void setup_wifi() {
   #endif
 
   wifi_wps_disable(); //Disable WPS mode for fallback to work
-  wifiManager.setTimeout(60); //Timeout and destroy AP after 1 minutes
+  wifiManager.setTimeout(300); //Timeout and destroy AP after 5 minutes
   wifiManager.autoConnect("EazyExit"); //Connect using WiFi manager, if no known network in range or credentials not provided
   delay(500);
 
