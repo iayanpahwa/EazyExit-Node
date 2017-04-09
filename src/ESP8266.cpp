@@ -20,14 +20,14 @@ ESP8266 firmware acting as MQTT endpoint for EazyExit home automation solution.
 
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-#include <credentials.h>
+#include <configuration.h>
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
 #include <WiFiManager.h>
 
 #define RELAY D0 //Define pin for load
-#define SERIAL_DEBUG 1 //Enable this for optional serial debugging
-#define CREDENTIALS_PROVIDED 0
+#define SERIAL_DEBUG 1 // Enable this for optional serial debugging
+#define CONFIGURATION_PROVIDED 0
 
 //Clients instances
 WiFiClient espClient;
@@ -40,6 +40,7 @@ void setup_wps(); //To setup WPS connection with Access Point
 void setup_wifi(); //Fallback, to use WiFi manager for connection
 void callback(char* , byte* , unsigned int); // Function executes whenever MQTT message arrives
 void getIP(); //Print MAC_Address,IP address and other info
+
 //Program starts here:
 void setup() {
 
@@ -48,33 +49,58 @@ void setup() {
   #endif
 
   pinMode(RELAY,OUTPUT); //Configure Pin as Output
-  setup_wps(); //Start with WPS type connection
+
+  #if CONFIGURATION_PROVIDED
+
+  #if SERIAL_DEBUG
+  Serial.println("Connecting to AP whose credentials are provided already");
+  Serial.println(ssid);
+  #endif
+
+  WiFi.begin(ssid, password);  //Connect using credentials provided in credentials.h file
+  delay(5000);
+
+  #else
+  #if SERIAL_DEBUG
+  Serial.println("Trying connected to a known AP");
+  #endif
+
+  WiFi.begin();
+  delay(5000); //Wait 5 seconds for connecting
+  #endif
 
   if(!isConnected()){
       #if SERIAL_DEBUG
-      Serial.println("TIMEOUT, starting WiFi Manager");
+      Serial.println("Can't find a known AP, Activating WPS mode");
+      delay(1000);
+      setup_wps();
       #endif
-      setup_wifi(); //Fallback! Manual connection if WPS fails.
   }
 
-  else{
     #if SERIAL_DEBUG
     getIP();
     #endif
-  }
 
   client.setServer(mqtt_server, 1883); //Set MQTT server in 'credentials.h'
   client.setCallback(callback); //Set MQTT callback function, which executes whenever MQTT message arrives
 }
 
 void setup_wps(){
-
   #if SERIAL_DEBUG
   Serial.println("WPS MODE ACTIVATED!");
   #endif
+
   WiFi.mode(WIFI_STA); //Set up station mode for WPS to work
   WiFi.beginWPSConfig(); //Start WPS connection
   delay(10000); //10 seconds timeout
+
+  if(!isConnected()){
+      #if SERIAL_DEBUG
+      Serial.println("WPS timeout! Starting WiFi Manager");
+      #endif
+
+      setup_wifi();
+  }
 }
 
 bool isConnected(){
@@ -97,32 +123,22 @@ void setup_wifi() {
 
   delay(5); // Wait 5 seconds before connecting
 
-  #if CREDENTIALS_PROVIDED
-  Serial.println("Connecting to ");
-  Serial.println(ssid);
-  WiFi.begin(ssid, password);  //Connect using credentials provided in credentials.h file
-
-  #else
-  Serial.println("Cannot find router, Starting WiFiManager Access Point");
-  wifi_wps_disable(); //Disable WPS mode for fallback to work
-  wifiManager.autoConnect("AutoConnectAP"); //Connect using WiFi manager, if no known network in range or credentials not provided
-
+  #if SERIAL_DEBUG
+  Serial.println("Cannot find known router, Starting WiFiManager Access Point");
   #endif
+
+  wifi_wps_disable(); //Disable WPS mode for fallback to work
+  wifiManager.setTimeout(60); //Timeout and destroy AP after 1 minutes
+  wifiManager.autoConnect("EazyExit"); //Connect using WiFi manager, if no known network in range or credentials not provided
   delay(500);
 
   if(!isConnected()){
-
         delay(2000); // 2 seconds timeout
         #if SERIAL_DEBUG
-        Serial.println("TIMEOUT, Restarting Node");
+        Serial.println("TIMEOUT, All methods failed! Restarting Node");
         #endif
         ESP.reset(); //If all methods fails reset ESP
     }
-  else{
-      #if SERIAL_DEBUG
-      getIP();
-      #endif
-  }
 }
 
 void getIP(){
@@ -150,7 +166,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   if(message == "onn")
   digitalWrite(RELAY,LOW);
-  }
+}
 
 void reconnect() {
 
@@ -158,7 +174,7 @@ void reconnect() {
   while (!client.connected()) {
 
     #if SERIAL_DEBUG
-    Serial.println("Attempting MQTT connection...");
+    Serial.println("\nAttempting MQTT connection...");
     #endif
 
     // Attempt to connect
@@ -180,7 +196,6 @@ void reconnect() {
     }
   }
 }
-
 
 void loop() {
 

@@ -13,7 +13,7 @@
 
 //Add your WiFi and MQTT topic credentials below
 
-const char* ssid = "";
-const char* password = "";
+const char* ssid = "........";
+const char* password = "........";
 const char* mqtt_server = "xxx.xxx.xxx.xxx"; //Address or IP
-const char* topic = "myHome";
+const char* topic = "myHome"; // MQTT topic string
