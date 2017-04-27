@@ -24,10 +24,17 @@ ESP8266 firmware acting as MQTT endpoint for EazyExit home automation solution.
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
 #include <WiFiManager.h>
+#include <Hash.h>
+
 
 #define RELAY D0 //Define pin for load
 #define SERIAL_DEBUG 1 // Enable this for optional serial debugging
 #define CONFIGURATION_PROVIDED 0
+
+// Make a Unique Node ID using MAC Address SHA1 hash
+String x = sha1(WiFi.macAddress());
+// Convert string to constant char*
+const char* UUID = x.c_str();
 
 //Clients instances
 WiFiClient espClient;
@@ -46,6 +53,11 @@ void setup() {
 
   #if SERIAL_DEBUG
   Serial.begin(115200);
+  #endif
+
+  #if SERIAL_DEBUG
+  Serial.println("Node UUID:");
+  Serial.println(UUID);
   #endif
 
   pinMode(RELAY,OUTPUT); //Configure Pin as Output
@@ -129,7 +141,7 @@ void setup_wifi() {
 
   wifi_wps_disable(); //Disable WPS mode for fallback to work
   wifiManager.setTimeout(300); //Timeout and destroy AP after 5 minutes
-  wifiManager.autoConnect("EazyExit"); //Connect using WiFi manager, if no known network in range or credentials not provided
+  wifiManager.autoConnect("EazyExit-Node"); //Connect using WiFi manager, if no known network in range or credentials not provided
   delay(500);
 
   if(!isConnected()){
@@ -178,7 +190,7 @@ void reconnect() {
     #endif
 
     // Attempt to connect
-    if (client.connect("ESP8266Client")) {
+    if (client.connect(UUID)) {
       #if SERIAL_DEBUG
       Serial.println("connected");
       #endif
