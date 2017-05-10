@@ -173,10 +173,10 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.println(message[i]);
   #endif
 
-  if(message == "off")
+  if(message == "OFF")
   digitalWrite(RELAY,HIGH);
 
-  if(message == "onn")
+  if(message == "ON")
   digitalWrite(RELAY,LOW);
 }
 
