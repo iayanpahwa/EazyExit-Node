@@ -15,5 +15,5 @@
 
 const char* ssid = "........";
 const char* password = "........";
-const char* mqtt_server = "xxx.xxx.xxx.xxx"; //Address or IP
+const char* mqtt_server = "eazyexit.lan"; //Address or IP
 const char* topic = "myHome"; // MQTT topic string
