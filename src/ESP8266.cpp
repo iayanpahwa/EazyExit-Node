@@ -87,8 +87,7 @@ void setup() {
       delay(1000);
       setup_wps();
       #endif
-  }
-
+}
     #if SERIAL_DEBUG
     getIP();
     #endif
@@ -110,7 +109,6 @@ void setup_wps(){
       #if SERIAL_DEBUG
       Serial.println("WPS timeout! Starting WiFi Manager");
       #endif
-
       setup_wifi();
   }
 }
@@ -123,6 +121,7 @@ bool isConnected(){
     #endif
     return false;
   }
+
   else{
     #if SERIAL_DEBUG
     Serial.println("CONNECTED TO AP");
@@ -172,6 +171,16 @@ void callback(char* topic, byte* payload, unsigned int length) {
   for(int i=0; i<=length+1; i++)
   Serial.println(message[i]);
   #endif
+
+// Send MAC ID whenever APP requests node for discovery
+  if(message == "IDENTIFY"){
+    delay(500);
+    client.publish("discoverReceive",UUID);
+    delay(500);
+    String IP = (WiFi.localIP().toString()).c_str();
+    client.publish("discoverReceive",IP.c_str());
+    client.subscribe("myHome");
+  }
 
   if(message == "OFF")
   digitalWrite(RELAY,HIGH);
