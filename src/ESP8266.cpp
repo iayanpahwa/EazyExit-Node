@@ -130,7 +130,11 @@ void setup_wifi() {
 
   wifi_wps_disable(); //Disable WPS mode for fallback to work
   wifiManager.setTimeout(300); //Timeout and destroy AP after 5 minutes
-  wifiManager.autoConnect("EazyExit-Node"); //Connect using WiFi manager, if no known network in range or credentials not provided
+
+  // Setup node as Access point for configuration with a unique SSID and pasword=eazyexit
+  String ssid = "EazyExit_"+String(ESP.getChipId());
+  const char* password = "eazyexit";
+  wifiManager.autoConnect(ssid.c_str(), password); //Connect using WiFi manager, if no known network in range or credentials not provided
   delay(500);
 
   if(!isConnected()){
