@@ -31,6 +31,7 @@ ESP8266 firmware acting as MQTT endpoint for EazyExit home automation solution.
 #define SERIAL_DEBUG 1 // Enable this for optional serial debugging
 
 // Make a Unique Node ID using MAC Address SHA1 hash
+String response; // MQTT response to discover command
 String x = sha1(WiFi.macAddress());
 // Convert string to constant char*
 const char* UUID = x.c_str();
@@ -56,7 +57,7 @@ void setup() {
 
   #if SERIAL_DEBUG
   Serial.println("Node UUID:");
-  Serial.println(UUID);
+  Serial.print(UUID);
   #endif
 
   pinMode(RELAY,OUTPUT); //Configure Pin as Output
@@ -144,6 +145,7 @@ void setup_wifi() {
 }
 
 void getIP(){
+  response = UUID + WiFi.localIP().toString();
   #if SERIAL_DEBUG
   Serial.println("IP address: ");
   Serial.print(WiFi.localIP());
@@ -166,10 +168,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
 // Send MAC ID whenever APP requests node for discovery
   if(message == "IDENTIFY"){
     delay(500);
-    client.publish("discoverReceive",UUID);
-    delay(500);
-    String IP = (WiFi.localIP().toString()).c_str();
-    client.publish("discoverReceive",IP.c_str());
+    client.publish("discoverReceive", response.c_str());
     client.subscribe("myHome");
   }
 
