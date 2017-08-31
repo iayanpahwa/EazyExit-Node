@@ -145,7 +145,7 @@ void setup_wifi() {
 }
 
 void getIP(){
-  char seperator = ':' ;
+  String seperator = ":" ;
   response = UUID + seperator + WiFi.localIP().toString();
   #if SERIAL_DEBUG
   Serial.println("IP address: ");
