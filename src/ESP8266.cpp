@@ -130,7 +130,7 @@ void setup_wifi() {
   wifiManager.setTimeout(300); //Timeout and destroy AP after 5 minutes
 
   // Setup node as Access point for configuration with a unique SSID and pasword=eazyexit
-  String ssid = "EazyExit_"+String(ESP.getChipId());
+  String ssid = "EazyExit_"+ String(ESP.getChipId());
   const char* password = "eazyexit";
   wifiManager.autoConnect(ssid.c_str(), password); //Connect using WiFi manager, if no known network in range or credentials not provided
   delay(500);
@@ -145,7 +145,8 @@ void setup_wifi() {
 }
 
 void getIP(){
-  response = UUID + WiFi.localIP().toString();
+  char seperator = ':' ;
+  response = UUID + seperator + WiFi.localIP().toString();
   #if SERIAL_DEBUG
   Serial.println("IP address: ");
   Serial.print(WiFi.localIP());
