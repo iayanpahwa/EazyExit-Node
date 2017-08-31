@@ -61,9 +61,6 @@ void setup() {
 
   pinMode(RELAY,OUTPUT); //Configure Pin as Output
 
-  WiFi.begin(ssid, password);  //Connect using credentials provided in credentials.h file
-  delay(5000);
-
   #if SERIAL_DEBUG
   Serial.println("Trying connected to a known AP");
   #endif
