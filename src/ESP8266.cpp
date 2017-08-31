@@ -29,7 +29,6 @@ ESP8266 firmware acting as MQTT endpoint for EazyExit home automation solution.
 
 #define RELAY D0 //Define pin for load
 #define SERIAL_DEBUG 1 // Enable this for optional serial debugging
-#define CONFIGURATION_PROVIDED 0
 
 // Make a Unique Node ID using MAC Address SHA1 hash
 String x = sha1(WiFi.macAddress());
@@ -62,24 +61,15 @@ void setup() {
 
   pinMode(RELAY,OUTPUT); //Configure Pin as Output
 
-  #if CONFIGURATION_PROVIDED
-
-  #if SERIAL_DEBUG
-  Serial.println("Connecting to AP whose credentials are provided already");
-  Serial.println(ssid);
-  #endif
-
   WiFi.begin(ssid, password);  //Connect using credentials provided in credentials.h file
   delay(5000);
 
-  #else
   #if SERIAL_DEBUG
   Serial.println("Trying connected to a known AP");
   #endif
 
   WiFi.begin();
   delay(5000); //Wait 5 seconds for connecting
-  #endif
 
   if(!isConnected()){
       #if SERIAL_DEBUG
