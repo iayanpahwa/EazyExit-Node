@@ -177,16 +177,29 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
 
   if(message == command_on){
-    digitalWrite(RELAY,HIGH);
-    client.publish("myHome/ACK", command_on.c_str());
+    digitalWrite(RELAY,LOW);
+    client.publish("EazyExit/ACK", command_on.c_str());
     client.subscribe("myHome");
   }
 
   if(message == command_off){
-    digitalWrite(RELAY,LOW);
-    client.publish("myHome/ACK", command_off.c_str());
+    digitalWrite(RELAY,HIGH);
+    client.publish("EazyExit/ACK", command_off.c_str());
     client.subscribe("myHome");
   }
+
+  if(message == "ON"){
+    digitalWrite(RELAY,HIGH);
+    client.publish("EazyExit/ACK", command_on.c_str());
+    client.subscribe("myHome");
+  }
+
+  if(message == "OFF"){
+    digitalWrite(RELAY,LOW);
+    client.publish("EazyExit/ACK", command_off.c_str());
+    client.subscribe("myHome");
+  }
+
 
 }
 
