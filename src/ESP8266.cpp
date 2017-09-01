@@ -32,7 +32,11 @@ ESP8266 firmware acting as MQTT endpoint for EazyExit home automation solution.
 
 // Make a Unique Node ID using MAC Address SHA1 hash
 String response; // MQTT response to discover command
+String seperator = ":" ;
 String x = sha1(WiFi.macAddress());
+String command_on = x + seperator + "ON" ;
+String command_off = x + seperator + "OFF" ;
+
 // Convert string to constant char*
 const char* UUID = x.c_str();
 
@@ -145,7 +149,6 @@ void setup_wifi() {
 }
 
 void getIP(){
-  String seperator = ":" ;
   response = UUID + seperator + WiFi.localIP().toString();
   #if SERIAL_DEBUG
   Serial.println("IP address: ");
@@ -173,12 +176,20 @@ void callback(char* topic, byte* payload, unsigned int length) {
     client.subscribe("myHome");
   }
 
-  if(message == "OFF")
-  digitalWrite(RELAY,HIGH);
+  if(message == command_on){
+    digitalWrite(RELAY,HIGH);
+    client.publish("myHome/ACK", command_on.c_str());
+    client.subscribe("myHome");
+  }
 
-  if(message == "ON")
-  digitalWrite(RELAY,LOW);
+  if(message == command_off){
+    digitalWrite(RELAY,LOW);
+    client.publish("myHome/ACK", command_off.c_str());
+    client.subscribe("myHome");
+  }
+
 }
+
 
 void reconnect() {
 
