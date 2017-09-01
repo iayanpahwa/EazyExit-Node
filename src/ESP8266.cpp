@@ -29,10 +29,14 @@ ESP8266 firmware acting as MQTT endpoint for EazyExit home automation solution.
 
 #define RELAY D0 //Define pin for load
 #define SERIAL_DEBUG 1 // Enable this for optional serial debugging
-#define CONFIGURATION_PROVIDED 0
 
 // Make a Unique Node ID using MAC Address SHA1 hash
+String response; // MQTT response to discover command
+String seperator = ":" ;
 String x = sha1(WiFi.macAddress());
+String command_on = x + seperator + "ON" ;
+String command_off = x + seperator + "OFF" ;
+
 // Convert string to constant char*
 const char* UUID = x.c_str();
 
@@ -57,29 +61,17 @@ void setup() {
 
   #if SERIAL_DEBUG
   Serial.println("Node UUID:");
-  Serial.println(UUID);
+  Serial.print(UUID);
   #endif
 
   pinMode(RELAY,OUTPUT); //Configure Pin as Output
 
-  #if CONFIGURATION_PROVIDED
-
-  #if SERIAL_DEBUG
-  Serial.println("Connecting to AP whose credentials are provided already");
-  Serial.println(ssid);
-  #endif
-
-  WiFi.begin(ssid, password);  //Connect using credentials provided in credentials.h file
-  delay(5000);
-
-  #else
   #if SERIAL_DEBUG
   Serial.println("Trying connected to a known AP");
   #endif
 
   WiFi.begin();
   delay(5000); //Wait 5 seconds for connecting
-  #endif
 
   if(!isConnected()){
       #if SERIAL_DEBUG
@@ -140,7 +132,11 @@ void setup_wifi() {
 
   wifi_wps_disable(); //Disable WPS mode for fallback to work
   wifiManager.setTimeout(300); //Timeout and destroy AP after 5 minutes
-  wifiManager.autoConnect("EazyExit-Node"); //Connect using WiFi manager, if no known network in range or credentials not provided
+
+  // Setup node as Access point for configuration with a unique SSID and pasword=eazyexit
+  String ssid = "EazyExit_"+ String(ESP.getChipId());
+  const char* password = "eazyexit";
+  wifiManager.autoConnect(ssid.c_str(), password); //Connect using WiFi manager, if no known network in range or credentials not provided
   delay(500);
 
   if(!isConnected()){
@@ -153,6 +149,7 @@ void setup_wifi() {
 }
 
 void getIP(){
+  response = UUID + seperator + WiFi.localIP().toString();
   #if SERIAL_DEBUG
   Serial.println("IP address: ");
   Serial.print(WiFi.localIP());
@@ -175,19 +172,37 @@ void callback(char* topic, byte* payload, unsigned int length) {
 // Send MAC ID whenever APP requests node for discovery
   if(message == "IDENTIFY"){
     delay(500);
-    client.publish("discoverReceive",UUID);
-    delay(500);
-    String IP = (WiFi.localIP().toString()).c_str();
-    client.publish("discoverReceive",IP.c_str());
+    client.publish("discoverReceive", response.c_str());
     client.subscribe("myHome");
   }
 
-  if(message == "OFF")
-  digitalWrite(RELAY,HIGH);
+  if(message == command_on){
+    digitalWrite(RELAY,LOW);
+    client.publish("EazyExit/ACK", command_on.c_str());
+    client.subscribe("myHome");
+  }
 
-  if(message == "ON")
-  digitalWrite(RELAY,LOW);
+  if(message == command_off){
+    digitalWrite(RELAY,HIGH);
+    client.publish("EazyExit/ACK", command_off.c_str());
+    client.subscribe("myHome");
+  }
+
+  if(message == "ON"){
+    digitalWrite(RELAY,HIGH);
+    client.publish("EazyExit/ACK", command_on.c_str());
+    client.subscribe("myHome");
+  }
+
+  if(message == "OFF"){
+    digitalWrite(RELAY,LOW);
+    client.publish("EazyExit/ACK", command_off.c_str());
+    client.subscribe("myHome");
+  }
+
+
 }
+
 
 void reconnect() {
 
