@@ -21,3 +21,5 @@
 const char* MQTT_SERVER  = "192.168.0.100"; //Address or IP
 uint16_t MQTT_PORT = 1883;
 const char* TOPIC = "myHome"; // MQTT topic string
+const char* TOPIC_ACK = "EazyExit/ACK";
+const char* TOPIC_DISCOVERY = "discoverReceive";
