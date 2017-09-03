@@ -20,143 +20,76 @@ ESP8266 firmware acting as MQTT endpoint for EazyExit home automation solution.
 
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-#include <configuration.h>
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
-#include <WiFiManager.h>
 #include <Hash.h>
-
-
-#define RELAY D0 //Define pin for load
-#define SERIAL_DEBUG 1 // Enable this for optional serial debugging
+#include <WiFiManager.h>
+#include "configuration.h"
+#include "EazyExit.h"
 
 // Make a Unique Node ID using MAC Address SHA1 hash
 String response; // MQTT response to discover command
-String seperator = ":" ;
-String x = sha1(WiFi.macAddress());
-String command_on = x + seperator + "ON" ;
-String command_off = x + seperator + "OFF" ;
+String seperator = ":"; // Seperator character for parsing, treated as string for eaze
+String x = sha1(WiFi.macAddress()); // Unique hash calculated on basis of MAC address
+String command_on = x + seperator + "ON"; // MQTT on command frame
+String command_off = x + seperator + "OFF"; // MQTT off command frame
 
-// Convert string to constant char*
+// Convert hash string to constant char* to be used later
 const char* UUID = x.c_str();
 
-//Clients instances
+// Clients instances
 WiFiClient espClient;
-WiFiManager wifiManager;
 PubSubClient client(espClient);
 
-//Declare functions
-bool isConnected(); //To check connection if node is connected to Access Point
-void setup_wps(); //To setup WPS connection with Access Point
-void setup_wifi(); //Fallback, to use WiFi manager for connection
+// MQTT callback function prototype
 void callback(char* , byte* , unsigned int); // Function executes whenever MQTT message arrives
-void getIP(); //Print MAC_Address,IP address and other info
 
 //Program starts here:
 void setup() {
 
   #if SERIAL_DEBUG
-  Serial.begin(115200);
+  Serial.begin(BAUD_RATE);
   #endif
 
   #if SERIAL_DEBUG
   Serial.println("Node UUID:");
-  Serial.print(UUID);
+  Serial.println(UUID);
   #endif
 
-  pinMode(RELAY,OUTPUT); //Configure Pin as Output
+  pinMode(RELAY,OUTPUT); // Configure Pin as Output
 
   #if SERIAL_DEBUG
-  Serial.println("Trying connected to a known AP");
+  Serial.println("Trying to connect to a known AP");
   #endif
 
-  WiFi.begin();
-  delay(5000); //Wait 5 seconds for connecting
+  WiFi.begin(); // Try to connect to a known AP in range
+  delay(CONNECT_WAIT); // Timeout of 5 seconds for connecting
 
-  if(!isConnected()){
+  if(!isConnected()) {
+
       #if SERIAL_DEBUG
       Serial.println("Can't find a known AP, Activating WPS mode");
-      delay(1000);
-      setup_wps();
       #endif
-}
-    #if SERIAL_DEBUG
-    getIP();
-    #endif
 
-  client.setServer(mqtt_server, 1883); //Set MQTT server in 'credentials.h'
+      delay(1000); // Wait 1 second before entring WPS mode
+      setup_wps(WPS_TIMEOUT); // Start WPS if no known AP is in range
+
+        if(!isConnected()) {
+            #if SERIAL_DEBUG
+            Serial.println("WPS timeout! Starting WiFi Manager");
+            #endif
+            setup_wifi(); // Start WiFiManager in AP mode when WPS fails to connect
+}
+  }
+
+  getIP(); // Print IP Address on console
+
+  response = UUID + seperator + WiFi.localIP().toString(); // Response header to MQTT IDENTIFY call
+  client.setServer(MQTT_SERVER, MQTT_PORT); //Set MQTT server in 'credentials.h'
   client.setCallback(callback); //Set MQTT callback function, which executes whenever MQTT message arrives
 }
 
-void setup_wps(){
-  #if SERIAL_DEBUG
-  Serial.println("WPS MODE ACTIVATED!");
-  #endif
-
-  WiFi.mode(WIFI_STA); //Set up station mode for WPS to work
-  WiFi.beginWPSConfig(); //Start WPS connection
-  delay(10000); //10 seconds timeout
-
-  if(!isConnected()){
-      #if SERIAL_DEBUG
-      Serial.println("WPS timeout! Starting WiFi Manager");
-      #endif
-      setup_wifi();
-  }
-}
-
-bool isConnected(){
-
-  if (WiFi.status()!= WL_CONNECTED){
-    #if SERIAL_DEBUG
-    Serial.println("NOT CONNECTED TO AP");
-    #endif
-    return false;
-  }
-
-  else{
-    #if SERIAL_DEBUG
-    Serial.println("CONNECTED TO AP");
-    #endif
-    return true;
-  }
-}
-
-void setup_wifi() {
-
-  delay(5); // Wait 5 seconds before connecting
-
-  #if SERIAL_DEBUG
-  Serial.println("Cannot find known router, Starting WiFiManager Access Point");
-  #endif
-
-  wifi_wps_disable(); //Disable WPS mode for fallback to work
-  wifiManager.setTimeout(300); //Timeout and destroy AP after 5 minutes
-
-  // Setup node as Access point for configuration with a unique SSID and pasword=eazyexit
-  String ssid = "EazyExit_"+ String(ESP.getChipId());
-  const char* password = "eazyexit";
-  wifiManager.autoConnect(ssid.c_str(), password); //Connect using WiFi manager, if no known network in range or credentials not provided
-  delay(500);
-
-  if(!isConnected()){
-        delay(2000); // 2 seconds timeout
-        #if SERIAL_DEBUG
-        Serial.println("TIMEOUT, All methods failed! Restarting Node");
-        #endif
-        ESP.reset(); //If all methods fails reset ESP
-    }
-}
-
-void getIP(){
-  response = UUID + seperator + WiFi.localIP().toString();
-  #if SERIAL_DEBUG
-  Serial.println("IP address: ");
-  Serial.print(WiFi.localIP());
-  #endif
-}
-
-void callback(char* topic, byte* payload, unsigned int length) {
+void callback(char* TOPIC, byte* payload, unsigned int length) {
 
   char p[length + 1];
   memcpy(p, payload, length);
@@ -170,40 +103,38 @@ void callback(char* topic, byte* payload, unsigned int length) {
   #endif
 
 // Send MAC ID whenever APP requests node for discovery
-  if(message == "IDENTIFY"){
+  if(message == "IDENTIFY") {
     delay(500);
     client.publish("discoverReceive", response.c_str());
-    client.subscribe("myHome");
+    client.subscribe(TOPIC);
   }
 
-  if(message == command_on){
+  if(message == command_on) {
     digitalWrite(RELAY,LOW);
+    client.publish("EazyExit/ACK", command_on.c_str());
+    client.subscribe(TOPIC);
+  }
+
+  if(message == command_off) {
+    digitalWrite(RELAY,HIGH);
+    client.publish("EazyExit/ACK", command_off.c_str());
+    client.subscribe(TOPIC);
+  }
+
+  if(message == "ON") {
+    digitalWrite(RELAY,HIGH);
     client.publish("EazyExit/ACK", command_on.c_str());
     client.subscribe("myHome");
   }
 
-  if(message == command_off){
-    digitalWrite(RELAY,HIGH);
-    client.publish("EazyExit/ACK", command_off.c_str());
-    client.subscribe("myHome");
-  }
-
-  if(message == "ON"){
-    digitalWrite(RELAY,HIGH);
-    client.publish("EazyExit/ACK", command_on.c_str());
-    client.subscribe("myHome");
-  }
-
-  if(message == "OFF"){
+  if(message == "OFF") {
     digitalWrite(RELAY,LOW);
     client.publish("EazyExit/ACK", command_off.c_str());
     client.subscribe("myHome");
   }
-
-
 }
 
-
+// Function to reconnect to MQTT broker in case connection breaks
 void reconnect() {
 
   // Loop until we're reconnected
@@ -212,13 +143,12 @@ void reconnect() {
     #if SERIAL_DEBUG
     Serial.println("\nAttempting MQTT connection...");
     #endif
-
     // Attempt to connect
     if (client.connect(UUID)) {
       #if SERIAL_DEBUG
       Serial.println("connected");
       #endif
-      client.subscribe(topic);
+      client.subscribe(TOPIC);
 }
 
     else {
