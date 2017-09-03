@@ -20,11 +20,12 @@ ESP8266 firmware acting as MQTT endpoint for EazyExit home automation solution.
 
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-#include <configuration.h>
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
 #include <WiFiManager.h>
 #include <Hash.h>
+#include "configuration.h"
+#include "EazyExit.h"
 
 // Make a Unique Node ID using MAC Address SHA1 hash
 String response; // MQTT response to discover command
@@ -42,7 +43,6 @@ WiFiManager wifiManager;
 PubSubClient client(espClient);
 
 // Function prototypes
-bool isConnected(); //To check connection if node is connected to Access Point
 void setup_wps(int); //To setup WPS connection with Access Point
 void setup_wifi(); //Fallback, to use WiFi manager for connection
 void callback(char* , byte* , unsigned int); // Function executes whenever MQTT message arrives
@@ -70,15 +70,15 @@ void setup() {
   delay(5000); //Wait 5 seconds for connecting
 
   if(!isConnected()) {
+
       #if SERIAL_DEBUG
       Serial.println("Can't find a known AP, Activating WPS mode");
+      #endif
+
       delay(1000);
       setup_wps(WPS_TIMEOUT);
-      #endif
 }
-    #if SERIAL_DEBUG
     getIP();
-    #endif
 
   client.setServer(mqtt_server, 1883); //Set MQTT server in 'credentials.h'
   client.setCallback(callback); //Set MQTT callback function, which executes whenever MQTT message arrives
@@ -101,22 +101,6 @@ void setup_wps(int timeout) {
   }
 }
 
-bool isConnected() {
-
-  if (WiFi.status()!= WL_CONNECTED){
-    #if SERIAL_DEBUG
-    Serial.println("NOT CONNECTED TO AP");
-    #endif
-    return false;
-  }
-
-  else {
-    #if SERIAL_DEBUG
-    Serial.println("CONNECTED TO AP");
-    #endif
-    return true;
-  }
-}
 
 void setup_wifi() {
 
