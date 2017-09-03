@@ -67,7 +67,7 @@ void setup() {
   pinMode(RELAY,OUTPUT); //Configure Pin as Output
 
   #if SERIAL_DEBUG
-  Serial.println("Trying connected to a known AP");
+  Serial.println("Trying to connect to a known AP");
   #endif
 
   WiFi.begin();
