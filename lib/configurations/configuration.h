@@ -16,6 +16,8 @@
 #define SERIAL_DEBUG 1 // Enable this for optional serial debugging
 #define BAUD_RATE 115200
 #define WPS_TIMEOUT 10000 // WPS timeout 10 seconds
+#define CONNECT_WAIT 5000 // 5 seconds timeout to conenct to known AP
 // Add your WiFi and MQTT topic credentials below
-const char* mqtt_server = "***.***.***.***"; //Address or IP
-const char* topic = "myHome"; // MQTT topic string
+const char* MQTT_SERVER  = "192.168.0.100"; //Address or IP
+uint16_t MQTT_PORT = 1883;
+const char* TOPIC = "myHome"; // MQTT topic string
