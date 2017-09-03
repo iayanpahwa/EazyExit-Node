@@ -11,6 +11,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
     */
 
-//Add your WiFi and MQTT topic credentials below
+// Hardware configs
+#define RELAY D0 // Define pin for load
+#define SERIAL_DEBUG 1 // Enable this for optional serial debugging
+#define BAUD_RATE 115200
+// Add your WiFi and MQTT topic credentials below
 const char* mqtt_server = "***.***.***.***"; //Address or IP
 const char* topic = "myHome"; // MQTT topic string

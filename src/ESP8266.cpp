@@ -26,10 +26,6 @@ ESP8266 firmware acting as MQTT endpoint for EazyExit home automation solution.
 #include <WiFiManager.h>
 #include <Hash.h>
 
-
-#define RELAY D0 // Define pin for load
-#define SERIAL_DEBUG 1 // Enable this for optional serial debugging
-
 // Make a Unique Node ID using MAC Address SHA1 hash
 String response; // MQTT response to discover command
 String seperator = ":"; // Seperator character, treated as string for eaze
@@ -56,7 +52,7 @@ void getIP(); //Print MAC_Address,IP address and other info
 void setup() {
 
   #if SERIAL_DEBUG
-  Serial.begin(115200);
+  Serial.begin(BAUD_RATE);
   #endif
 
   #if SERIAL_DEBUG
