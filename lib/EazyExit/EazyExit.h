@@ -12,7 +12,6 @@
     */
 
 bool isConnected(); // To check connection if node is connected to Access Point
-void setup_wps(int timeout);
 void setup_wps(int); //To setup WPS connection with Access Point
 void setup_wifi();
 void getIP();
