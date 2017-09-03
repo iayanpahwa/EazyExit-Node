@@ -43,7 +43,7 @@ PubSubClient client(espClient);
 
 // Function prototypes
 bool isConnected(); //To check connection if node is connected to Access Point
-void setup_wps(); //To setup WPS connection with Access Point
+void setup_wps(int); //To setup WPS connection with Access Point
 void setup_wifi(); //Fallback, to use WiFi manager for connection
 void callback(char* , byte* , unsigned int); // Function executes whenever MQTT message arrives
 void getIP(); //Print MAC_Address,IP address and other info
@@ -73,7 +73,7 @@ void setup() {
       #if SERIAL_DEBUG
       Serial.println("Can't find a known AP, Activating WPS mode");
       delay(1000);
-      setup_wps();
+      setup_wps(WPS_TIMEOUT);
       #endif
 }
     #if SERIAL_DEBUG
@@ -84,14 +84,14 @@ void setup() {
   client.setCallback(callback); //Set MQTT callback function, which executes whenever MQTT message arrives
 }
 
-void setup_wps() {
+void setup_wps(int timeout) {
   #if SERIAL_DEBUG
   Serial.println("WPS MODE ACTIVATED!");
   #endif
 
   WiFi.mode(WIFI_STA); //Set up station mode for WPS to work
   WiFi.beginWPSConfig(); //Start WPS connection
-  delay(10000); //10 seconds timeout
+  delay(timeout); //10 seconds timeout
 
   if(!isConnected()) {
       #if SERIAL_DEBUG
