@@ -79,11 +79,11 @@ void setup() {
             Serial.println("WPS timeout! Starting WiFi Manager");
             #endif
             setup_wifi(); // Start WiFiManager in AP mode when WPS fails to connect
+          }
 }
-  }
 
   getIP(); // Print IP Address on console
-
+  
   response = UUID + seperator + WiFi.localIP().toString(); // Response header to MQTT IDENTIFY call
   client.setServer(MQTT_SERVER, MQTT_PORT); //Set MQTT server in 'credentials.h'
   client.setCallback(callback); //Set MQTT callback function, which executes whenever MQTT message arrives
@@ -104,33 +104,32 @@ void callback(char* TOPIC, byte* payload, unsigned int length) {
 
 // Send MAC ID whenever APP requests node for discovery
   if(message == "IDENTIFY") {
-    delay(500);
-    client.publish("discoverReceive", response.c_str());
+    client.publish(TOPIC_DISCOVERY, response.c_str());
     client.subscribe(TOPIC);
   }
 
   if(message == command_on) {
     digitalWrite(RELAY,LOW);
-    client.publish("EazyExit/ACK", command_on.c_str());
+    client.publish(TOPIC_ACK , command_on.c_str());
     client.subscribe(TOPIC);
   }
 
   if(message == command_off) {
     digitalWrite(RELAY,HIGH);
-    client.publish("EazyExit/ACK", command_off.c_str());
+    client.publish(TOPIC_ACK , command_off.c_str());
     client.subscribe(TOPIC);
   }
 
   if(message == "ON") {
     digitalWrite(RELAY,HIGH);
-    client.publish("EazyExit/ACK", command_on.c_str());
-    client.subscribe("myHome");
+    client.publish(TOPIC_ACK , command_on.c_str());
+    client.subscribe(TOPIC);
   }
 
   if(message == "OFF") {
     digitalWrite(RELAY,LOW);
-    client.publish("EazyExit/ACK", command_off.c_str());
-    client.subscribe("myHome");
+    client.publish(TOPIC_ACK , command_off.c_str());
+    client.subscribe(TOPIC);
   }
 }
 
