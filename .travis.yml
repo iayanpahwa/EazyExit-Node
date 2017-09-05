@@ -32,8 +32,6 @@ install:
      - pip install -U platformio
 
 script:
-     - git submodule init
-     - git submodule update
      - rm lib/ESP8266wifi/library.json
-     - platformio run -e nodemcu
+     - pio run -e nodemcu
      
