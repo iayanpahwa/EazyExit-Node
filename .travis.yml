@@ -24,14 +24,10 @@ python:
      - "2.7"
 
 sudo: false
-cache:
-     directories:
-         - "~/.platformio"
 
 install:
      - pip install -U platformio
 
 script:
-     - rm lib/ESP8266wifi/library.json
      - pio run -e nodemcu
      
